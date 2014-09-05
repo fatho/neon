@@ -1,0 +1,3 @@
+[submodule "Hydrogen"]
+	path = Hydrogen
+	url = https://github.com/zrho/Hydrogen.git

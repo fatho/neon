@@ -1,0 +1,40 @@
+# Log Files
+bochsout.txt
+
+# Object files
+**/build/
+*.o
+*.ko
+*.obj
+*.elf
+
+# Libraries
+*.lib
+*.a
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Distribution
+/dist/
+/doc/
+
+
+/emu/hd0.img
+
+# Eclipse project
+/.cproject
+/.project
+/.settings/
+/build
