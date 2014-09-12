@@ -1,12 +1,14 @@
 # Log Files
 bochsout.txt
 
-# Object files
+# Intermediate Files
 **/build/
 *.o
 *.ko
 *.obj
 *.elf
+*.ibc
+*.idr.c
 
 # Libraries
 *.lib

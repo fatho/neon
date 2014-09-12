@@ -1,0 +1,5 @@
+menuentry "Neon" {
+	  multiboot /boot/hydrogen.bin
+	  module /boot/${KERNEL_EXECUTABLE} kernel64
+	  boot
+}

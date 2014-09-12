@@ -1,0 +1,4 @@
+- implement "Mark and Compact" GC (easier to handle in kernel mode)
+- reimplement "prelude" library for Idris (probably copy&paste)
+- implement lowlevel primitives for memory manipulation
+- ask Edwin Brady about license
