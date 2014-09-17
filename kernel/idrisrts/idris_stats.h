@@ -13,6 +13,7 @@ typedef struct {
     int alloc_count;       // How many times alloc is called.
     int copied;            // Size of space copied during GC.
     int max_heap_size;     // Maximum heap size achieved.
+    // TODO: Num Alive
 
     clock_t init_time;     // Time spent for vm initialization.
     clock_t exit_time;     // Time spent for vm termination.

@@ -1,8 +1,9 @@
 #include "idris_rts.h"
 #include "idris_gc.h"
 #include "idris_bitstring.h"
-#include <assert.h>
+#include <base/panic.h>
 
+/*
 VAL copy(VM* vm, VAL x) {
     int i, ar;
     Closure* cl = NULL;
@@ -97,12 +98,108 @@ void cheney(VM *vm) {
     }
     assert(scan == vm->heap.next);
 }
+*/
+
+typedef struct {
+    uintptr_t ptr;
+    ptrdiff_t diff;
+} brktbl_e;
+
+int marked_alive;
+
+void compact(VM* vm) {
+    brktbl_e* breakTblBot = NULL;
+    brktbl_e* breakTblTop = NULL;
+    
+    int i;
+    int ar;
+    char* scan = vm->heap.heap;
+    char* free = vm->heap.heap;
+
+    int total = 0;
+    int alive = 0;
+  
+    while(scan < vm->heap.next) {
+       size_t item_size = *((size_t*)scan);
+       char* item_base = scan;
+       VAL heap_item = (VAL)(scan+sizeof(size_t));
+       scan += item_size;
+       total += 1;
+       if(GETGCI(heap_item)) {
+	   /* if(item_base > free) { */
+	   /*     // move item */
+	   /*     if(breakTblBot) { */
+	   /* 	   // check for collision with break table */
+	   /* 	   if(free + item_size > breakTblBot) { */
+	   /* 	       // move part */
+	   /* 	       // TODO: relocate break table */
+	   /* 	   } */
+	   /*     } else { */
+	   /* 	   memmove(free, item_base, item_size); */
+	   /* 	   // create new break table in now free space */
+	   /*     } */
+	   /* } */
+	   /* free += item_size; */
+	   /* switch(GETTY(heap_item)) { */
+	   /* case CON: */
+	   /*     ar = ARITY(heap_item); */
+	   /*     for(i = 0; i < ar; ++i) { */
+	   /* 	   SETGCI(heap_item->info.c.args[i], 1); */
+	   /*     } */
+	   /*     break; */
+	   /* case STROFFSET: */
+	   /*     SETGCI(heap_item->info.str_offset->str, 1); */
+	   /*     break; */
+	   /* default: // Nothing to copy */
+	   /*     break; */
+	   /* } */
+	   alive += 1;
+       }
+    }
+
+    int y = 0;
+    PANICF("#alive: %d\n#total: %d\n#alive_mark: %d", alive, total, marked_alive);
+}
+
+void mark(VM* vm, VAL value) {
+    int i, ar;
+    if(!GETGCI(value) && !ISINT(value)) {
+	SETGCI(value, 1);
+	marked_alive += 1;
+	// propagate ALIVE
+	switch(GETTY(value)) {
+	case CON:
+	    ar = ARITY(value);
+	    for(i = 0; i < ar; ++i) {
+		mark(vm, value->info.c.args[i]);
+	    }
+	    break;
+	case STROFFSET:
+	    mark(vm, value->info.str_offset->str);
+	    break;
+	default: // Nothing to copy
+	    break;
+	}
+    }
+}
 
 void idris_gc(VM* vm) {
     HEAP_CHECK(vm)
     STATS_ENTER_GC(vm->stats, vm->heap.size)
     // printf("Collecting\n");
+    VAL* root;
+    marked_alive = 0;
 
+    for(root = vm->valstack; root < vm->valstack_top; ++root) {
+	if(*root) {
+	    mark(vm, *root);
+	}
+    }
+    if(vm->ret) mark(vm, vm->ret);
+    if(vm->reg1) mark(vm, vm->reg1);
+
+    compact(vm);
+	/*
     char* newheap = malloc(vm->heap.size);
     char* oldheap = vm->heap.heap;
     if (vm->heap.old != NULL) 
@@ -142,18 +239,22 @@ void idris_gc(VM* vm) {
         vm->heap.size += vm->heap.growth;
     } 
     vm->heap.old = oldheap;
-    
+	*/
     STATS_LEAVE_GC(vm->stats, vm->heap.size, vm->heap.next - vm->heap.heap)
     HEAP_CHECK(vm)
 }
 
 void idris_gcInfo(VM* vm, int doGC) {
+    /*
     printf("Stack: <BOT %p> <TOP %p>\n", vm->valstack, vm->valstack_top); 
     printf("Final heap size         %d\n", (int)(vm->heap.size));
     printf("Final heap use          %d\n", (int)(vm->heap.next - vm->heap.heap));
+    */
     if (doGC) { idris_gc(vm); }
+    /*
     printf("Final heap use after GC %d\n", (int)(vm->heap.next - vm->heap.heap));
 
     printf("Total allocations       %d\n", vm->stats.allocations);
     printf("Number of collections   %d\n", vm->stats.collections);
+    */
 }

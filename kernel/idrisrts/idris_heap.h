@@ -1,7 +1,7 @@
 #ifndef _IDRIS_HEAP_H
 #define _IDRIS_HEAP_H
 
-#include <stddef.h>
+#include <base/stddef.h>
 
 typedef struct {
     char*  next;   // Next allocated chunk. Should always (heap <= next < end).
@@ -13,10 +13,10 @@ typedef struct {
     char* old;
 } Heap;
 
-
+/*
 void alloc_heap(Heap * heap, size_t heap_size);
 void free_heap(Heap * heap);
-
+*/
 
 #ifdef IDRIS_DEBUG
 void heap_check_all(Heap * heap);

@@ -3,8 +3,9 @@
 
 #include <base/stdlib.h>
 
-#include <stddef.h>
+#include <base/stddef.h>
 
+/*
 void alloc_heap(Heap * h, size_t heap_size) 
 {
     char * mem = malloc(heap_size); 
@@ -38,6 +39,7 @@ void free_heap(Heap * h) {
         free(h->old); 
     }
 }
+*/
 
 // TODO: more testing
 /******************** Heap testing ********************************************/

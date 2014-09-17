@@ -2,8 +2,6 @@
 #include "stdint.h"
 #include "stddef.h"
 
-#define VGA_STRIDE (2*80)
-
 /**
  * Calculates a VGA color byte from fore- and background color.
  */
@@ -13,21 +11,25 @@
 #define RED     0x4
 #define WHITE   0xF
 
-void kernel_panic(char* msg) {
-  volatile uint16_t* vga = ((volatile uint16_t*)0xB8000);
-  uint16_t vgaoffset = 0;
-
-  while(*msg) {
-    switch(*msg) {
-      case '\n':
-        vgaoffset = (vgaoffset + VGA_STRIDE) & VGA_STRIDE;
-        break;
-      default:
-        vga[vgaoffset] = *msg | VGACOLOR(WHITE,RED) << 8;
-        vgaoffset += 2;
+void kernel_panic(const char* msg) {
+    volatile uint16_t* vga = ((volatile uint16_t*)0xB8000);
+    uint16_t vgaoffset = 0;
+    
+    for(uint16_t i = 0; i < 80 * 25; i++) {
+	vga[i] = VGACOLOR(WHITE,RED) << 8 | ' ';
     }
-    msg++;
-  }
+    
+    while(*msg && vgaoffset < (25*80)) {
+	switch(*msg) {
+	case '\n':
+	    vgaoffset = vgaoffset + 80 - vgaoffset%80;
+	    break;
+	default:
+	    vga[vgaoffset] = *msg | VGACOLOR(WHITE,RED) << 8;
+	    vgaoffset += 1;
+	}
+	msg++;
+    }
 
-  while(1) ;
+    while(1) ;
 }

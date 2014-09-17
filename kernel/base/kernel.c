@@ -25,24 +25,30 @@
 
 #include "hydrogen.h"
 #include "isr.h"
+
 #include <base/stddef.h>
+#include <base/stdlib.h>
 
 uint64_t pit_ticks = 0;
 
 static void fault_gp(isr_state_t *state)
 {
+    PANIC("FAULTED!");
 }
+
+int launch_idris_kernel();
 
 void kmain_bsp(void);
 void kmain_bsp(void)
 {
     size_t i = 0;
-    for (i = 0; i < 256; ++i) {
+    for (i = 0; i < ISR_COUNT; ++i) {
         isr_handlers[i] = (uintptr_t) &fault_gp;
     }
     //isr_handlers[KEYBOARD_IRQ_VECTOR] = (uintptr_t) &keyboard_handler;
 
-    asm volatile ("sti");
-
+    // asm volatile ("sti");
+    launch_idris_kernel();
+    //    PANIC("KERNEL BOOTED");
     while (1);
 }

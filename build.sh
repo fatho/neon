@@ -8,10 +8,11 @@ case $1 in
 	# cleaning
 	ABS_PATH_DEL=$(readlink -e $BUILD_DIR)
 	echo "Deleting $ABS_PATH_DEL..."
-	rm -r -I $BUILD_DIR
+	rm -r -I $BUILD_DIR/*
 	;;
     build)
 	# build only
+	mkdir -p $BUILD_DIR
 	pushd $BUILD_DIR
         cmake .. -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX && make
 	popd
@@ -24,8 +25,10 @@ case $1 in
 	;;
     *)
 	# build and install
+	mkdir -p $BUILD_DIR
 	echo "Building and installing..."
 	pushd $BUILD_DIR
         cmake .. -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX && make && make install
 	popd
+	sync
 esac

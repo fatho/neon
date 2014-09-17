@@ -7,6 +7,7 @@ extern char** environ;
 
 void putStr(char* str) {
     //printf("%s", str);
+    PANIC(str);
 }
 
 void* fileOpen(char* name, char* mode) {

@@ -11,22 +11,25 @@
 #include "idris_bitstring.h"
 
 
-VM* init_vm(int stack_size, size_t heap_size, 
+VM* init_vm(VM* vm, VAL* valstack, int stack_size, char* heap_base, size_t heap_size, 
             int max_threads // not implemented yet
             ) {
 
-    VM* vm = malloc(sizeof(VM));
     STATS_INIT_STATS(vm->stats)
     STATS_ENTER_INIT(vm->stats)
-
-    VAL* valstack = malloc(stack_size * sizeof(VAL));
 
     vm->valstack = valstack;
     vm->valstack_top = valstack;
     vm->valstack_base = valstack;
     vm->stack_max = valstack + stack_size;
 
-    alloc_heap(&(vm->heap), heap_size);
+    vm->heap.heap   = heap_base;
+    vm->heap.next   = heap_base;
+    vm->heap.end    = heap_base + heap_size;
+    vm->heap.size   = heap_size;
+    // kernel heap has fixed size
+    vm->heap.growth = 0;
+    vm->heap.old    = NULL;
 
     vm->ret = NULL;
     vm->reg1 = NULL;
@@ -64,14 +67,13 @@ Stats terminate(VM* vm) {
 #ifdef HAS_PTHREAD
     free(vm->inbox);
 #endif
-    free(vm->valstack);
-    free_heap(&(vm->heap));
+    //free(vm->valstack);
+    //free_heap(&(vm->heap));
 #ifdef HAS_PTHREAD
     pthread_mutex_destroy(&(vm -> inbox_lock));
     pthread_mutex_destroy(&(vm -> inbox_block));
     pthread_cond_destroy(&(vm -> inbox_waiting));
 #endif
-    free(vm);
 
     STATS_LEAVE_EXIT(stats)
     return stats;
@@ -289,6 +291,7 @@ void dumpStack(VM* vm) {
     int i = 0;
     VAL* root;
 
+    /*
     for (root = vm->valstack; root < vm->valstack_top; ++root, ++i) {
         printf("%d: ", i);
         dumpVal(*root);
@@ -298,9 +301,11 @@ void dumpStack(VM* vm) {
     printf("RET: ");
     dumpVal(vm->ret);
     printf("\n");
+    */
 }
 
 void dumpVal(VAL v) {
+    /*
     if (v==NULL) return;
     int i;
     if (ISINT(v)) { 
@@ -325,7 +330,7 @@ void dumpVal(VAL v) {
     default:
         printf("val");
     }
-
+    */
 }
 
 void idris_memset(void* ptr, i_int offset, uint8_t c, i_int size) {
@@ -348,7 +353,7 @@ VAL idris_castIntStr(VM* vm, VAL i) {
     Closure* cl = allocate(vm, sizeof(Closure) + sizeof(char)*16, 0);
     SETTY(cl, STRING);
     cl -> info.str = (char*)cl + sizeof(Closure);
-    sprintf(cl -> info.str, "%d", (int)(GETINT(i)));
+    snprintf(cl -> info.str, 16, "%d", (int)(GETINT(i)));
     return cl;
 }
 
@@ -365,7 +370,7 @@ VAL idris_castFloatStr(VM* vm, VAL i) {
     Closure* cl = allocate(vm, sizeof(Closure) + sizeof(char)*32, 0);
     SETTY(cl, STRING);
     cl -> info.str = (char*)cl + sizeof(Closure);
-    sprintf(cl -> info.str, "%g", GETFLOAT(i));
+    snprintf(cl -> info.str, 32, "%g", GETFLOAT(i));
     return cl;
 }
 
@@ -967,26 +972,23 @@ VAL idris_recvMessage(VM* vm) {
 }
 #endif
 
-VAL* nullary_cons;
+// allocate nullaries from the beginning
+VAL nullary_cons[NUM_NULLARIES];
+Closure nullary_closures[NUM_NULLARIES];
 
 void initNullaries() {
     int i;
     VAL cl;
-    nullary_cons = malloc(256 * sizeof(VAL));
-    for(i = 0; i < 256; ++i) {
-        cl = malloc(sizeof(Closure));
-        SETTY(cl, CON);
-        cl->info.c.tag_arity = i << 8;
-        nullary_cons[i] = cl;
+    for(i = 0; i < NUM_NULLARIES; ++i) {
+	cl = &nullary_closures[i];
+	SETTY(cl, CON);
+	cl->info.c.tag_arity = i << 8;
+	nullary_cons[i] = cl;
     }
 }
 
 void freeNullaries() {
-    int i;
-    for(i = 0; i < 256; ++i) {
-        free(nullary_cons[i]);
-    }
-    free(nullary_cons);
+    // nothing to do
 }
 
 int __idris_argc;

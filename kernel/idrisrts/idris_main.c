@@ -1,31 +1,27 @@
 #include "idris_opts.h"
 #include "idris_stats.h"
 #include "idris_rts.h"
-// The default options should give satisfactory results under many circumstances.
-RTSOpts opts = { 
-    .init_heap_size = 4096000,
-    .max_stack_size = 4096000,
-    .show_summary   = 0
-};
+
+void _idris__123_runMain0_125_(VM*, VAL*);
+
+#define VALSTACK_SIZE 1024
+#define HEAP_SIZE 4096000
+
+VM kernel_vm;
+VAL valstack[VALSTACK_SIZE];
 
 int launch_idris_kernel() {
-    VM* vm = init_vm(opts.max_stack_size, opts.init_heap_size, 1);
-    initNullaries();
+    char* heap_base = (char*)0x2000000;
 
-    _idris__123_runMain0_125_(vm, NULL);
+    memset(heap_base, 0, HEAP_SIZE);
+    memset(valstack, 0, sizeof(VAL)*VALSTACK_SIZE);
 
-#ifdef IDRIS_DEBUG
-    if (opts.show_summary) {
-        idris_gcInfo(vm, 1);
-    }
-#endif
+VM* vm = init_vm(&kernel_vm, valstack, VALSTACK_SIZE, heap_base, HEAP_SIZE, 1);
+initNullaries();
 
-    Stats stats = terminate(vm);
+_idris__123_runMain0_125_(vm, NULL);
 
-    if (opts.show_summary) {
-        print_stats(&stats);
-    }
+Stats stats = terminate(vm);
 
-    freeNullaries();
-    return EXIT_SUCCESS;
+return 0;
 }

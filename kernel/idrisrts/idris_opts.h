@@ -1,7 +1,7 @@
 #ifndef _IDRIS_OPTS_H
 #define _IDRIS_OPTS_H
 
-#include <stddef.h>
+#include <base/stddef.h>
 
 typedef struct {
     size_t init_heap_size;

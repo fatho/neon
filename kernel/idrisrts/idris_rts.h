@@ -7,7 +7,7 @@
 #ifdef HAS_PTHREAD
 #include <pthread.h>
 #endif
-#include <stdint.h>
+#include <base/stdint.h>
 
 #include "idris_heap.h"
 #include "idris_stats.h"
@@ -71,7 +71,7 @@ typedef struct Closure {
         Buffer* buf;
         ManagedPtr* mptr;
     } info;
-} Closure;
+}__attribute__ ((aligned (8))) Closure;
 
 typedef struct {
     VAL* valstack;
@@ -102,8 +102,9 @@ typedef struct {
 } VM;
 
 // Create a new VM
-VM* init_vm(int stack_size, size_t heap_size, 
-            int max_threads);
+VM* init_vm(VM* vm, VAL* valstack, int stack_size, char* heap_base, size_t heap_size, 
+            int max_threads // not implemented yet
+            );
 // Clean up a VM once it's no longer needed
 Stats terminate(VM* vm);
 
@@ -133,13 +134,17 @@ typedef void(*func)(VM*, VAL*);
 #define CARITY(x) ((x)->info.c.tag_arity & 0x000000ff)
 
 // Use top 16 bits for saying which heap value is in
-// Bottom 16 bits for closure type
+// Middle 8 bits for gc info
+// Bottom 12 bits for closure type
 
-#define GETTY(x) ((x)->ty & 0x0000ffff)
-#define SETTY(x,t) (x)->ty = (((x)->ty & 0xffff0000) | (t))
+#define GETTY(x) ((x)->ty & 0x00000fff)
+#define SETTY(x,t) (x)->ty = (((x)->ty & 0xfffff000) | (t))
 
 #define GETHEAP(x) ((x)->ty >> 16)
 #define SETHEAP(x,y) (x)->ty = (((x)->ty & 0x0000ffff) | ((t) << 16))
+
+#define GETGCI(x) (((x)->ty & 0x0000f000) >> 12)
+#define SETGCI(x,i) ((x)->ty = (((x)->ty & 0xffff0fff) | ((i) << 12)))
 
 // Integers, floats and operators
 
@@ -221,7 +226,8 @@ void idris_doneAlloc(VM* vm);
 
 #define NULL_CON(x) nullary_cons[x]
 
-extern VAL* nullary_cons;
+#define NUM_NULLARIES 256
+extern VAL nullary_cons[NUM_NULLARIES];
 void initNullaries();
 void freeNullaries();
 

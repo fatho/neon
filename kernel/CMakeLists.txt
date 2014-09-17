@@ -14,7 +14,7 @@ message(${BASE_INCLUDE_DIR})
 include_directories(${BASE_INCLUDE_DIR})
 
 # compiler flags
-set(C_FLAGS "-std=gnu99 -mcmodel=large -ffreestanding") # Add later:  -Wall -Wextra
+set(C_FLAGS "-std=gnu99 -mcmodel=large -ffreestanding -O2 -Werror") # Add later:  -Wall -Wextra
 set(LD_FLAGS "-T ${LDFILE} -z max-page-size=0x1000")
 
 # compilers
@@ -39,7 +39,9 @@ add_custom_command(
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/idris
 )
 LIST(APPEND CFILES ${IDRIS_C_MAIN})
-add_definitions(-DIDRIS_TARGET_OS=neon -DIDRIS_TARGET_TRIPLE=x86_64-neon-elf)
+set_source_files_properties(${IDRIS_C_MAIN} PROPERTIES COMPILE_FLAGS "-I${BASE_INCLUDE_DIR}/idrisrts")
+
+add_definitions(-DIDRIS_TARGET_OS="neon" -DIDRIS_TARGET_TRIPLE="x86_64-neon-elf")
 
 # define target
 add_executable(${KERNEL_EXECUTABLE} ${CFILES} ${ASMFILES})
