@@ -101,20 +101,53 @@ void cheney(VM *vm) {
 */
 
 typedef struct {
-    uintptr_t ptr;
-    ptrdiff_t diff;
+    uintptr_t brk;
+    uint32_t diff;
 } brktbl_e;
 
 int marked_alive;
 
+brktbl_e* brktbl_partition(brktbl_e* bot, brktbl_e* top) {
+    brktbl_e* pivot = top - 1;
+    brktbl_e* store = bot;
+    brktbl_e* i;
+    brktbl_e tmp;
+    for(i = bot; i < top - 1; i++) {
+	if(i->brk < pivot->brk) {
+	    tmp = *i;
+	    *i = *store;
+	    *store = tmp;
+	    store++;
+	}
+    }
+    tmp = *store;
+    *store = *(top - 1);
+    *(top-1) = tmp;
+    return store;
+}
+
+void brktbl_sort(brktbl_e* bot, brktbl_e* top) {
+    while(bot < top) {
+	brktbl_e* mid = brktbl_partition(bot, top);
+	if(mid - bot >= top - mid) {
+	    brktbl_sort(mid, top);
+	    top = mid;
+	} else {
+	    brktbl_sort(bot, mid);
+	    bot = mid;
+	}
+    }
+}
+
 void compact(VM* vm) {
-    brktbl_e* breakTblBot = NULL;
-    brktbl_e* breakTblTop = NULL;
+    brktbl_e* breakTableBot = NULL;
+    brktbl_e* breakTableTop = NULL;
     
     int i;
     int ar;
     char* scan = vm->heap.heap;
     char* free = vm->heap.heap;
+    char* scan2;
 
     int total = 0;
     int alive = 0;
@@ -123,37 +156,98 @@ void compact(VM* vm) {
        size_t item_size = *((size_t*)scan);
        char* item_base = scan;
        VAL heap_item = (VAL)(scan+sizeof(size_t));
-       scan += item_size;
        total += 1;
+
        if(GETGCI(heap_item)) {
-	   /* if(item_base > free) { */
-	   /*     // move item */
-	   /*     if(breakTblBot) { */
-	   /* 	   // check for collision with break table */
-	   /* 	   if(free + item_size > breakTblBot) { */
-	   /* 	       // move part */
-	   /* 	       // TODO: relocate break table */
-	   /* 	   } */
-	   /*     } else { */
-	   /* 	   memmove(free, item_base, item_size); */
-	   /* 	   // create new break table in now free space */
-	   /*     } */
-	   /* } */
-	   /* free += item_size; */
-	   /* switch(GETTY(heap_item)) { */
-	   /* case CON: */
-	   /*     ar = ARITY(heap_item); */
-	   /*     for(i = 0; i < ar; ++i) { */
-	   /* 	   SETGCI(heap_item->info.c.args[i], 1); */
-	   /*     } */
-	   /*     break; */
-	   /* case STROFFSET: */
-	   /*     SETGCI(heap_item->info.str_offset->str, 1); */
-	   /*     break; */
-	   /* default: // Nothing to copy */
-	   /*     break; */
-	   /* } */
+	   assert(item_base >= free);
+	   if(item_base == free) {
+	       // contiguous block
+	       // next item
+	       scan += item_size;
+	       free = scan;
+	   } else if(item_base > free) {
+	       // skipped hole, find end of next hole
+	       scan2 = scan;
+	       char* block_end = 0;
+	       char* hole_end = 0;
+
+	       while(scan2 < vm->heap.next) {
+		   size_t next_size = *((size_t*)scan);
+		   VAL next_item = (VAL)(scan2 + sizeof(size_t));
+		   if(block_end != NULL && GETGCI(next_item)) {
+		       // next hole ends there
+		       hole_end = scan2;
+		   } else if(block_end == NULL && !GETGCI(next_item)) {
+		       // current block ends there
+		       block_end = scan2;
+		   }
+		   scan2 += next_size;
+	       }
+	       // end of heap reached while searching for end of block
+	       if(block_end == NULL) {
+		   block_end = vm->heap.next;
+	       }
+	       // end of heap reached while searching for end of hole
+	       if(hole_end == NULL) {
+		   hole_end = block_end;
+	       }
+	       size_t block_size = block_end - scan;
+
+	       if(breakTableBot != NULL) {
+		   // we already have a break table
+		   if((uintptr_t)free + block_size > (uintptr_t)breakTableBot) {
+		       // move as much as possible
+		       size_t n = (uintptr_t)breakTableBot - (uintptr_t)free;
+		       memmove(free, scan, n);
+		       free += n;
+		       scan += n;
+		       // roll the table
+		       brktbl_e* newBrkBot = (brktbl_e*)hole_end;
+		       brktbl_e tmp;
+		       size_t nblocks = (block_size - n) / sizeof(tmp);
+		       size_t nlast   = block_size - n - nblocks * sizeof(tmp);
+		       // copy in blocks
+		       for(int i = 0; i < nblocks; i++) {
+			   // save break table entry
+			   memcpy(&tmp, free, sizeof(tmp));
+			   // copy data
+			   memmove(free, scan, sizeof(tmp));
+			   // copy break table entry
+			   newBrkBot -= 1;
+			   memcpy(newBrkBot, &tmp, sizeof(tmp));
+			   // update pointers
+			   scan += sizeof(tmp);
+			   free += sizeof(tmp);
+		       }
+		       // 
+		       
+		       
+		   } else {
+		       // just move
+		       memmove(free, scan, block_size);
+		       // add entry to break-table (in now free space)
+		       breakTableTop->brk  = (uintptr_t)scan;
+		       breakTableTop->diff = scan - free;
+		       breakTableTop ++;
+		   }
+	       } else {
+		   // move block down
+		   memmove(free, scan, block_size);
+		   // create new break table
+		   breakTableTop = (brktbl_e*) hole_end;
+		   breakTableBot = breakTableTop - 1;
+		   // initialize first entry
+		   breakTableBot->brk  = (uintptr_t)scan;
+		   breakTableBot->diff = scan - free;
+		   // continue with next block
+		   scan = hole_end;
+	       }
+	   }
+
 	   alive += 1;
+       } else {
+	   // next item
+	   scan += item_size;
        }
     }
 
