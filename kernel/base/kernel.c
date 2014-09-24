@@ -47,7 +47,7 @@ void kmain_bsp(void)
     }
     //isr_handlers[KEYBOARD_IRQ_VECTOR] = (uintptr_t) &keyboard_handler;
 
-    // asm volatile ("sti");
+    // __asm__ volatile ("sti");
     launch_idris_kernel();
     //    PANIC("KERNEL BOOTED");
     while (1);

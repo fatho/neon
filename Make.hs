@@ -83,7 +83,10 @@ asflags :: [String]
 asflags = ["-f elf64"]
 
 idrflags :: [String]
-idrflags = ["-S", "-p", "effects"]
+idrflags =
+  [ "-S", "-p", "effects"
+  , "-i", "kernel/idris"
+  ]
 
 -- HELPER ----------------------------------------------------------------------
 
