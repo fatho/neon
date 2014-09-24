@@ -47,11 +47,14 @@ main = shakeArgs shakeOptions $ do
   idrisC *> \x -> do
     is <- getDirectoryFiles "" ["kernel/idris//*.idr"]
     need is
-    () <- cmd [idris, "-S", "-o", x, "kernel/idris/Main.idr"]
+    buildIdr "kernel/idris/Main.idr" x
     return ()
 
   buildFiles "asm" buildS
   buildFiles "c"   buildC
+
+buildIdr :: FilePath -> FilePath -> Action ()
+buildIdr s o = command_ [EchoStdout True] idris $ idrflags ++ ["-o", o, s]
 
 buildS :: FilePath -> FilePath -> Action ()
 buildS s o = cmd $ [nasm] ++ asflags ++ [s, "-o", o]
@@ -78,6 +81,9 @@ ldflags = ["-z", "max-page-size=0x1000"]
 
 asflags :: [String]
 asflags = ["-f elf64"]
+
+idrflags :: [String]
+idrflags = ["-S", "-p", "effects"]
 
 -- HELPER ----------------------------------------------------------------------
 
