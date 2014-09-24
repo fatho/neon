@@ -74,7 +74,7 @@ cflags =
   ]
 
 ldflags :: [String]
-ldflags = ["-z max-page-size=0x1000"]
+ldflags = ["-z", "max-page-size=0x1000"]
 
 asflags :: [String]
 asflags = ["-f elf64"]
