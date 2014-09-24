@@ -24,5 +24,5 @@ case "$mode" in
 		;;
 esac
 
-qemu-system-x86_64 "$@" $ARGS -smp $NUM_CPUS -m 128 hd0.img
+qemu-system-x86_64 "$@" $ARGS -smp $NUM_CPUS -m 2048 hd0.img
 
