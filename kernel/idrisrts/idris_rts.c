@@ -11,7 +11,7 @@
 #include "idris_bitstring.h"
 
 
-VM* init_vm(VM* vm, VAL* valstack, int stack_size, char* heap_base, size_t heap_size, 
+VM* init_vm(VM* vm, VAL* valstack, int stack_size, char* heap1_base, char* heap2_base, size_t heap_size, 
             int max_threads // not implemented yet
             ) {
 
@@ -23,9 +23,10 @@ VM* init_vm(VM* vm, VAL* valstack, int stack_size, char* heap_base, size_t heap_
     vm->valstack_base = valstack;
     vm->stack_max = valstack + stack_size;
 
-    vm->heap.heap   = heap_base;
-    vm->heap.next   = heap_base;
-    vm->heap.end    = heap_base + heap_size;
+    vm->heap_copy   = heap2_base;
+    vm->heap.heap   = heap1_base;
+    vm->heap.next   = heap1_base;
+    vm->heap.end    = heap1_base + heap_size;
     vm->heap.size   = heap_size;
     // kernel heap has fixed size
     vm->heap.growth = 0;

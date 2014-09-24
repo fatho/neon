@@ -80,6 +80,7 @@ typedef struct {
     VAL* stack_max;
     
     Heap heap;
+    char* heap_copy;
 #ifdef HAS_PTHREAD
     pthread_mutex_t inbox_lock;
     pthread_mutex_t inbox_block;
@@ -102,7 +103,7 @@ typedef struct {
 } VM;
 
 // Create a new VM
-VM* init_vm(VM* vm, VAL* valstack, int stack_size, char* heap_base, size_t heap_size, 
+VM* init_vm(VM* vm, VAL* valstack, int stack_size, char* heap1_base, char* heap2_base, size_t heap_size, 
             int max_threads // not implemented yet
             );
 // Clean up a VM once it's no longer needed
