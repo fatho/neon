@@ -5,10 +5,13 @@ bochsout.txt
 **/build/
 *.o
 *.ko
+*.co
+*.asmo
 *.obj
 *.elf
 *.ibc
 *.idr.c
+.shake.database
 
 # Libraries
 *.lib
@@ -32,11 +35,4 @@ bochsout.txt
 /dist/
 /doc/
 
-
 /emu/hd0.img
-
-# Eclipse project
-/.cproject
-/.project
-/.settings/
-/build

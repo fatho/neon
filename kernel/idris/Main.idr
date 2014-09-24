@@ -8,4 +8,4 @@ wasteMem 0 = "Consider this memory wasted. No, really, this memory does not cont
 wasteMem n = wasteMem (n-1) ++ wasteMem (n-1)
 
 main : IO ()
-main = panic (wasteMem 20)
+main = panic "Hello World!"
