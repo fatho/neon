@@ -16,12 +16,13 @@ Offset = Bits64
 ||| Pointer into virtual memory.
 data VirtPtr a = MkVirtPtr Bits64
 
-||| Coerces two virtual memory pointers.
-coerceVirt : VirtPtr a -> VirtPtr b
-coerceVirt (MkVirtPtr x) = MkVirtPtr x
+instance Cast (VirtPtr a) (VirtPtr b) where
+  cast (MkVirtPtr x) = MkVirtPtr x
 
-(+) : VirtPtr a -> Offset -> VirtPtr a
-(MkVirtPtr v) + o = MkVirtPtr (v + o)
+data PhysPtr = MkPhysPtr Bits64
+
+addOffset : VirtPtr a -> Offset -> VirtPtr a
+addOffset (MkVirtPtr v) o = MkVirtPtr (v + o)
 
 --------------------------------------------------------------------------------
 -- Memory Effect
@@ -55,8 +56,20 @@ class Storable a where
 --------------------------------------------------------------------------------
 
 instance Storable Bits8 where
-  readMem (MkVirtPtr ptr)    = callMemory $ mkForeign (FFun "GETMEM8" [FBits64] FBits8) ptr 
+  readMem  (MkVirtPtr ptr)   = callMemory $ mkForeign (FFun "GETMEM8" [FBits64] FBits8) ptr 
   writeMem (MkVirtPtr ptr) x = callMemory $ mkForeign (FFun "SETMEM8" [FBits64, FBits8] FUnit) ptr x
+
+instance Storable Bits16 where
+  readMem  (MkVirtPtr ptr)   = callMemory $ mkForeign (FFun "GETMEM16" [FBits64] FBits16) ptr 
+  writeMem (MkVirtPtr ptr) x = callMemory $ mkForeign (FFun "SETMEM16" [FBits64, FBits16] FUnit) ptr x
+
+instance Storable Bits32 where
+  readMem  (MkVirtPtr ptr)   = callMemory $ mkForeign (FFun "GETMEM32" [FBits64] FBits32) ptr 
+  writeMem (MkVirtPtr ptr) x = callMemory $ mkForeign (FFun "SETMEM32" [FBits64, FBits32] FUnit) ptr x
+
+instance Storable Bits64 where
+  readMem  (MkVirtPtr ptr)   = callMemory $ mkForeign (FFun "GETMEM64" [FBits64] FBits64) ptr 
+  writeMem (MkVirtPtr ptr) x = callMemory $ mkForeign (FFun "SETMEM64" [FBits64, FBits64] FUnit) ptr x
 
 --------------------------------------------------------------------------------
 -- Operations
