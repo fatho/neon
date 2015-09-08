@@ -1,7 +1,6 @@
 -- %include "base/panic.h"
 import Effects
 import Memory
-import VGA
 
 panic : String -> IO ()
 panic str = mkForeign (FFun "kernel_panic" [FString] FUnit) str

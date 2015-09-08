@@ -17,6 +17,10 @@ bochsout.txt
 *.lib
 *.a
 
+# Cabal
+/.cabal-sandbox/
+cabal.sandbox.config
+
 # Shared objects (inc. Windows DLLs)
 *.dll
 *.so

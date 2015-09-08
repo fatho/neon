@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-import Development.Shake
+import Development.Shake hiding ((*>))
 import Development.Shake.FilePath
 import Control.Applicative ((<$))
 
@@ -33,18 +33,18 @@ main = shakeArgs shakeOptions $ do
     () <- cmd ["rm", "-Rf", "build" :: String]
     return ()
 
-  neonSys *> \x -> do
+  neonSys %> \x -> do
     () <- cmd ["mkdir", "-p", "build/kernel" :: String]
     need [idrisO]
     cs <- needCompiled "c"
     ss <- needCompiled "asm"
     cmd $ [ld] ++ ldflags ++ ["-T", "kernel/link.ld", "-o", x, idrisO] ++ cs ++ ss
 
-  idrisO *> \x -> do
+  idrisO %> \x -> do
     need [idrisC]
     buildC idrisC x
 
-  idrisC *> \x -> do
+  idrisC %> \x -> do
     is <- getDirectoryFiles "" ["kernel/idris//*.idr"]
     need is
     buildIdr "kernel/idris/Main.idr" x
@@ -100,7 +100,7 @@ needCompiled ext = do
   os <$ need os
 
 buildFiles :: String -> (FilePath -> FilePath -> Action ()) -> Rules ()
-buildFiles ext go = "build/kernel//*.o" ++ ext *> \o -> do
+buildFiles ext go = "build/kernel//*.o" ++ ext %> \o -> do
   let s = dropDirs 1 (o -<.> ext)
   need [s]
   go s o
